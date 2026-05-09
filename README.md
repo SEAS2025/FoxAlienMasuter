@@ -17,21 +17,23 @@ Operational notes, COM quirks, limit-switch behavior: see **`masuter-setup.txt`*
 | `Disconnect-Candle.ps1` | Stop Candle so another process can open the serial port |
 | `Run-Candle-Masuter.bat` | Launch Candle pointing at `./candle-11.2/Candle/` |
 | `install-candle.ps1` | Download and extract Candle 11.2 portable |
-| `DryRun-WebCircle.ps1` | Stream a `.nc` file line-by-line to GRBL (default: Feather circle dry path) |
-| `Move-To-Table-Center.ps1` | G53 XY move toward table centre from EEPROM `$130`/`$131` |
-| `Move-To-Z-Top.ps1` | G53 Z move to configured homed-top machine coordinate |
-| `Send-HOME.ps1`, `Probe-Z-Deck.ps1`, `Spindle-On.ps1` | Machine-specific utilities (verify wiring before relying on them) |
-| `New-ComplexDryRun.ps1` | Generate a dense hypotrochoid air path (`samples/complex-spirograph-air-dry.nc`-style) |
+| `DryRun-WebCircle.ps1` | Stream `.nc`/`.mm.nc` lines to GRBL (**file may include M3** spindle on) |
+| `Move-To-Table-Center.ps1` | G53 XY toward table midpoint from EEPROM `$130`/`$131` |
+| `Move-To-Z-Top.ps1` | G53 Z lift toward homed top |
+| `Run-Smiley-Carve.ps1` | Helps table-centre + optional CUT-confirm carve stream for smiley pine file |
+| `New-SmileyFacePineNc.ps1` | Regenerate shallow smiley contour (`samples/smiley-face-soft-pine-G54.mm.nc`) |
+| `Send-HOME.ps1`, `Probe-Z-Deck.ps1`, `Spindle-On.ps1` | Machine-specific helpers (verify wiring/limit behaviour) |
+| `New-ComplexDryRun.ps1` | Hypotrochoid air carve generator (`samples/complex-spirograph-air-dry.nc`) |
 
 Set **`MASUTER_COM`** (for example `COM7`) before scripts that take `-Com`.
 
 ## Samples
 
-Under **`samples/`**: box trace, feather circle (MIT), synthetic Z-clamped wave, generated spirograph. Third-party attribution: **`samples/from-web/SOURCE_AND_LICENSE.txt`**.
+Under **`samples/`**: box trace, feather circle (MIT), synthetic Z-clamped wave, generated spirograph, shallow **smiley carve** pine job (`smiley-face-soft-pine-G54.mm.nc`, G54 top-of-stock). Third-party attribution: **`samples/from-web/SOURCE_AND_LICENSE.txt`**.
 
 ## Safety
 
-Dry-run NC files intend **fixed safe Z** above the spoilboard **and** spindle off unless you deliberately change code. Confirm machine coordinates, feeds, and limit wiring before unattended runs.
+Default **dry-run** samples deliberately keep spindle off and safe Z heights. **`smiley-face-soft-pine-G54.mm.nc` and Run-Smiley-Carve** turn **spindle ON (M3)** after you explicitly type `CUT` -- watch fingers, clamps, and fire-extinguisher common sense around chips.
 
 ## Repository
 

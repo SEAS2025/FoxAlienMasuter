@@ -1,9 +1,24 @@
 param(
   [string]$NcPath = (Join-Path $PSScriptRoot "samples/from-web/feather-circle-dry-75mm.nc"),
-  [string]$Com = $(if ($env:MASUTER_COM) { $env:MASUTER_COM } else { "COM5" })
+  [string]$Com,
+  [int]$LineWaitMs = 12000
 )
 
 $ErrorActionPreference = "Stop"
+
+function ResolveMasuterCom {
+  foreach ($name in @(Get-CimInstance Win32_PnPEntity | Where-Object Name -Like '*USB-SERIAL CH340*COM*' | Sort-Object Name | Select-Object -ExpandProperty Name)) {
+    if ($name -match '\(COM(\d+)\)') { return "COM$($matches[1])" }
+  }
+  foreach ($name in @(Get-CimInstance Win32_PnPEntity | Where-Object Name -Like '*CH34*COM*' | Sort-Object Name | Select-Object -ExpandProperty Name)) {
+    if ($name -match '\(COM(\d+)\)') { return "COM$($matches[1])" }
+  }
+  throw "No CH340 COM found. Close Candle then pass -Com (e.g. COM7)."
+}
+
+if (-not $Com) {
+  $Com = if ($env:MASUTER_COM) { $env:MASUTER_COM } else { ResolveMasuterCom }
+}
 if (-not (Test-Path $NcPath)) { throw "Missing: $NcPath" }
 
 $nclines = @(Get-Content $NcPath | ForEach-Object { $_.Trim() } |
@@ -79,7 +94,7 @@ try {
   foreach ($nl in $nclines) {
     $i++
     Write-Host "`r>> $i / $($nclines.Count)" -NoNewline
-    $resp = Cmd $port $nl 12000  # allow slow rapids across table
+    $resp = Cmd $port $nl $LineWaitMs  # allow slow moves / arcs
     if ($resp -match '(?msi)alarm:') {
       Write-Host "`nSTOP ALARM sending: $nl"
       Write-Host $resp
@@ -98,4 +113,4 @@ try {
   $port.Dispose()
 }
 
-Write-Host "Dry-run done (segmented G1 at fixed Z clearance)."
+Write-Host "Streaming pass finished."

@@ -1,11 +1,25 @@
 param(
-  [string]$Com = $(if ($env:MASUTER_COM) { $env:MASUTER_COM } else { 'COM5' }),
+  [string]$Com,
   [int]$Feed = 4500
 )
 
 $ErrorActionPreference = 'Stop'
 
-Write-Host "`n=== Disconnect Candle (or COM tools), then rerun. Optional Candle-process stop follows ==="
+function ResolveMasuterCom {
+  foreach ($name in @(Get-CimInstance Win32_PnPEntity | Where-Object Name -Like '*USB-SERIAL CH340*COM*' | Sort-Object Name | Select-Object -ExpandProperty Name)) {
+    if ($name -match '\(COM(\d+)\)') { return "COM$($matches[1])" }
+  }
+  foreach ($name in @(Get-CimInstance Win32_PnPEntity | Where-Object Name -Like '*CH34*COM*' | Sort-Object Name | Select-Object -ExpandProperty Name)) {
+    if ($name -match '\(COM(\d+)\)') { return "COM$($matches[1])" }
+  }
+  throw 'No CH340 COM port found. Pass -Com (e.g. COM7).'
+}
+
+if (-not $Com) {
+  $Com = if ($env:MASUTER_COM) { $env:MASUTER_COM } else { ResolveMasuterCom }
+}
+
+Write-Host "`n=== Disconnect Candle (COM: $Com) ==="
 & (Join-Path $PSScriptRoot 'Disconnect-Candle.ps1')
 Start-Sleep -Milliseconds 1500
 
@@ -68,4 +82,4 @@ Write-Host "`nStatus after:"
 Write-Host (Send $sp '?' 1500)
 
 $sp.Close(); $sp.Dispose()
-Write-Host "`n(Z unchanged — only XY table-center in machine coords. Re-home with `$H if limits/references drift.)"
+Write-Host "`n(Z unchanged XY only -- table-center in machine coords.) Re-home with `$H when limits drift."

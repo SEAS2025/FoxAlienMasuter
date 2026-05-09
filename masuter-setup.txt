@@ -33,8 +33,13 @@ Official Candle project: https://github.com/Denvi/Candle
    - Idle (or <Idle …> from `?`) is GOOD: the controller is ready. You do NOT need to clear Idle.
    - If Candle is connected first, Disconnect-Candle.ps1 (or disconnect in Candle UI) frees CH340 COM.
    - Orphan PowerShell tests can also hang COM until closed; unplug/replug USB as a last resort.
-   - Scripts: Disconnect-Candle.ps1 then DryRun-WebCircle.ps1 (prints line count). Spindle stays off unless you edit G-code.
-
+   - Scripts: Disconnect-Candle.ps1 then DryRun-WebCircle.ps1 streams every G/M line; **whatever is in your file runs** (`M5` spindle off versus `M3` spindle ON).
 7) PowerShell one-liners: avoid naming helpers `R` (and similar)
    PowerShell binds `R` to the `Invoke-History` alias; calls like `(R $port 5000)` can error with "positional parameter … Invoke-History". Use spelled-out names (`ReadFor`, `Send-Line`, etc.).
+
+8) Shallow smiley carve into soft pine (`samples/smiley-face-soft-pine-G54.mm.nc`)
+   Uses G54: Z0 MUST be TOP of stock; XY origin at board centre beneath the spindle.
+   Typical flow: `$H`; Run-Smiley-Carve.ps1 -OnlyCenterTable (disconnect Candle) for machine table-centre XY; jog bit over VISUAL pine centre then zero XY in Candle;
+   jog Z gently to touch TOP of pine thin-paper-drag then zero Z; CLOSE Candle; Run-Smiley-Carve.ps1 then type CUT to stream spindle-on job.
+   Edit sizes/feeds via New-SmileyFacePineNc.ps1 (e.g. -DepthMm -2 -FeedXY 320). Roughly Ø3 mm endmill/downcut assumed.
 
