@@ -2,10 +2,9 @@
 # See Close-Candle-Stop-And-Home.ps1 for the full three-step process.
 
 param(
-  [string]$Com
+  [string]$Com,
+  [switch]$StopStreamingPowerShell
 )
 
 $ErrorActionPreference = 'Stop'
-$splat = @{}
-if ($Com) { $splat.Com = $Com }
-& (Join-Path $PSScriptRoot 'Close-Candle-Stop-And-Home.ps1') @splat
+& (Join-Path $PSScriptRoot 'Close-Candle-Stop-And-Home.ps1') @PSBoundParameters

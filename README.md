@@ -14,7 +14,7 @@ Operational notes, COM quirks, limit-switch behavior: see **`masuter-setup.txt`*
 
 | Script | Purpose |
 |--------|---------|
-| `Close-Candle-Stop-And-Home.ps1` | **Shut down workflow:** close Candle, stop motion (hold/reset/`$X`/M5), home (`$H`). Retries COM if port was busy. |
+| `Close-Candle-Stop-And-Home.ps1` | **Shut down workflow:** close Candle, optional `-StopStreamingPowerShell`, stop motion (hold/reset/`$X`/M5), home (`$H`). |
 | `Disconnect-Candle.ps1` | Stop Candle so another process can open the serial port |
 | `Run-Candle-Masuter.bat` | Launch Candle pointing at `./candle-11.2/Candle/` |
 | `install-candle.ps1` | Download and extract Candle 11.2 portable |

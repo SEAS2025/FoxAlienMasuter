@@ -7,8 +7,10 @@ Use this workflow before streaming the Mt. Katahdin toolpaths so the machine doe
 When you need to **stop the job**, **free COM**, and put the machine back at **limit home**, run one command from the repo root:
 
 ```powershell
-.\Close-Candle-Stop-And-Home.ps1 -Com COM7
+.\Close-Candle-Stop-And-Home.ps1 -Com COM7 -StopStreamingPowerShell
 ```
+
+Use **`-StopStreamingPowerShell`** when COM stays denied (a `DryRun-WebCircle` / Katahdin runner PowerShell still holds the port).
 
 Or set `MASUTER_COM` and omit `-Com`. The script:
 
@@ -16,7 +18,7 @@ Or set `MASUTER_COM` and omit `-Com`. The script:
 2. **Stops activity**: feed hold, GRBL soft reset, `$X`, `M5` (spindle off).
 3. **Homes** with `$H` and waits for `Idle` without active `Pn:` limit pins.
 
-If the port is still busy, **stop any PowerShell or other sender** that is streaming G-code to the same COM port (Candle alone is not always the only lock). The script **retries opening COM** several times after closing Candle.
+If the port is still busy, something else holds COM (often a **PowerShell** window running `DryRun-WebCircle` or a Katahdin runner). The script **retries opening COM** after closing Candle; if it still fails, pass **`-StopStreamingPowerShell`** to end only those repo streamer processes (Cursor temp scripts are excluded), or close that window manually.
 
 `Stop-Masuter-And-Home.ps1` is a thin alias for the same workflow.
 

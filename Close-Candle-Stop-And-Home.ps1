@@ -5,13 +5,15 @@
 #   2) Stop activity — feed hold, soft reset, unlock, spindle off (clears planner).
 #   3) Return to starting point — `$H` homing cycle to limit-switch home.
 #
-# If COM is still denied after step 1: stop any PowerShell/other sender streaming
-# G-code on the same port, then run this script again.
+# If COM is still denied after step 1: pass -StopStreamingPowerShell (kills this repo's
+# PowerShell streamers only), or close any G-code sender on that COM manually.
 
 param(
   [string]$Com,
   [int]$ComOpenRetries = 8,
-  [int]$ComOpenRetrySeconds = 2
+  [int]$ComOpenRetrySeconds = 2,
+  # End processes whose command line matches this repo's stream scripts (see body). Does not stop Candle-only; Disconnect-Candle handles Candle.
+  [switch]$StopStreamingPowerShell
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,6 +36,23 @@ Write-Host ''
 Write-Host '========== 1/3 Close Candle (free COM port) ==========' -ForegroundColor Cyan
 & (Join-Path $PSScriptRoot 'Disconnect-Candle.ps1')
 Start-Sleep -Seconds 2
+
+if ($StopStreamingPowerShell) {
+  Write-Host '--- Stopping PowerShell G-code streamers from this workflow (DryRun / Katahdin runners)...' -ForegroundColor Yellow
+  $streamRx = '(?i)DryRun-WebCircle\.ps1|Start-KatahdinDryRun\.ps1|Run-KatahdinOakAirTestSequential\.ps1|Run-KatahdinOakSequential\.ps1'
+  foreach ($procName in @('powershell.exe', 'pwsh.exe')) {
+    Get-CimInstance Win32_Process -Filter "Name='$procName'" | ForEach-Object {
+      $cl = $_.CommandLine
+      if (-not $cl) { return }
+      if ($cl -match '(?i)AppData\\Local\\Temp\\ps-script-') { return }
+      if ($cl -notmatch $streamRx) { return }
+      if ($_.ProcessId -eq $PID) { return }
+      Write-Host "  Stop-Process -Id $($_.ProcessId)"
+      Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+  }
+  Start-Sleep -Seconds 2
+}
 
 function Drain([System.IO.Ports.SerialPort]$p, [int]$ms) {
   $a = ''
@@ -77,7 +96,7 @@ for ($attempt = 1; $attempt -le $ComOpenRetries; $attempt++) {
 }
 
 if (-not $opened) {
-  throw "Could not open $Com after $ComOpenRetries tries. Close Candle and any sender using $Com, then run Close-Candle-Stop-And-Home.ps1 again."
+  throw "Could not open $Com after $ComOpenRetries tries. Close Candle and any sender using $Com, rerun with -StopStreamingPowerShell, or run Close-Candle-Stop-And-Home.ps1 again."
 }
 
 try {
