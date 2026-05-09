@@ -36,3 +36,5 @@ Dry-run NC files intend **fixed safe Z** above the spoilboard **and** spindle of
 ## Repository
 
 This project is maintained as its **own Git repository** at [`SEAS2025/FoxAlienMasuter`](https://github.com/SEAS2025/FoxAlienMasuter). Earlier snapshots may also appear in other workspaces; treat **this clone** as canonical.
+
+Development chat logs (Cursor agent JSONL exports) live under **`docs/transcripts/`**.
