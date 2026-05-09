@@ -67,9 +67,9 @@ if ($OnlyCenterTable) {
 Write-Host @"
 
 ==============================================================================
-READY TO CARVE WARNING
-  Clamp is secure. Clearing path cleared. Roughly 68 mm OD face carve at -2 mm.
-  Spindle will START (M3) from the G-code file unless you stripped it manually.
+READY TO CARVE
+  Clamp path clear. MULTI-pass depth from NC (~7 mm tiers). Chip-out / collet snag: STOP FIRST.
+  File order is **M3 + dwell** THEN **Safe-Z retract** THEN XY carve moves.
 ==============================================================================
 
 "@
