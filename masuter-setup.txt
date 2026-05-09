@@ -41,5 +41,5 @@ Official Candle project: https://github.com/Denvi/Candle
    Uses G54: Z0 MUST be TOP of stock; XY origin at board centre beneath the spindle.
    Typical flow: `$H`; Run-Smiley-Carve.ps1 -OnlyCenterTable (disconnect Candle) for machine table-centre XY; jog bit over VISUAL pine centre then zero XY in Candle;
    jog Z gently to touch TOP of pine thin-paper-drag then zero Z; CLOSE Candle; Run-Smiley-Carve.ps1 then type CUT to stream spindle-on job.
-   Edit sizes/feeds via New-SmileyFacePineNc.ps1 (e.g. -DepthMm -2 -FeedXY 320). Roughly Ø3 mm endmill/downcut assumed.
-
+   Edit sizes/feeds via New-SmileyFacePineNc.ps1 (e.g. -DepthMm -2 -FeedXY 320 -SpinupDwellSeconds 18). Roughly Ø3 mm endmill/downcut assumed.
+   File sends **M5** then **M3 S7200** plus **G4 P…** spindle spin-up (default 12 s in generator). If spindle never spins but motions run, wiring/firmware spindle/PWM differs from Candle expectations.

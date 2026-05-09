@@ -1,7 +1,8 @@
 param(
   [string]$NcPath = (Join-Path $PSScriptRoot "samples/from-web/feather-circle-dry-75mm.nc"),
   [string]$Com,
-  [int]$LineWaitMs = 12000
+  # Long default: G4 spindle dwell lines can exceed typical rapids timeout.
+  [int]$LineWaitMs = 90000
 )
 
 $ErrorActionPreference = "Stop"

@@ -11,7 +11,9 @@ param(
   [int]$MouthSeg = 42,
   [int]$FeedXY = 380,
   [int]$PlungeZFeed = 110,
-  [int]$SpinRpm = 7200
+  [int]$SpinRpm = 7200,
+  # Seconds AFTER M3 before any XY motion (PWM/VFD ramp).
+  [int]$SpinupDwellSeconds = 12
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,7 +40,7 @@ $L.Add('')
 $L.Add('M5')
 $L.Add('G4 P2')
 $L.Add(('M3 S{0}' -f $SpinRpm))
-$L.Add('G4 P4')
+$L.Add(('G4 P{0}' -f $SpinupDwellSeconds))
 $L.Add('')
 $L.Add('G0 Z10')
 
