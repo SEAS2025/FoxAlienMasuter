@@ -6,5 +6,8 @@ candle-*-portable.zip
 # Cursor / IDE
 .cursor/
 
+# Python
+__pycache__/
+
 # Cached terrain tiles (Mapzen Terrarium, downloaded by New-TerrainNc.py)
 .dem-cache/

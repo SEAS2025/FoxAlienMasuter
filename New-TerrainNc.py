@@ -14,10 +14,13 @@ Pipeline:
 
 CLI:
   python New-TerrainNc.py --name katahdin --lat-min 45.86 --lat-max 45.95 \
-      --lon-min -68.99 --lon-max -68.85 --board-mm 380 \
+      --lon-min -68.99 --lon-max -68.85 --board-mm 356 \
       --stock-mm 25 --max-cut-mm 18 --vexag 1.0 \
       --rough-tool 3.0 --finish-tool 3.0 --finish-stepover 0.4 \
       --out samples/katahdin
+
+  Use --board-mm ~356 (not 380) on Fox Alien Masuter when G54 WCO X ~ -363
+  so max work X stays within ~363 mm travel to machine X=0.
 """
 
 from __future__ import annotations

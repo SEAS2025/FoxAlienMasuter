@@ -1,0 +1,65 @@
+# Katahdin Dry-Run Workflow
+
+Use this workflow before streaming the Mt. Katahdin toolpaths so the machine does not get stuck on hard stops.
+
+## One-command dry run
+
+From this repository:
+
+```powershell
+.\Start-KatahdinDryRun.ps1 -Which Finish
+```
+
+That script:
+
+1. Closes Candle if it is holding the CH340 serial port.
+2. Detects the current USB serial COM port, for example `COM7`.
+3. Regenerates `samples/katahdin.finish.air-dry.nc` if missing.
+4. Sends `$X` to clear alarm state.
+5. Sends `$H` and waits for GRBL to report `Idle`.
+6. Refuses to stream if status includes active pins such as `Pn:X`, `Pn:Z`, or `Pn:XZ`.
+7. Streams the air-dry file with spindle off.
+8. Polls after sending until buffered GRBL motion returns to `Idle`.
+
+Use `-Which Rough` for the roughing air-dry file.
+
+## Manual checklist
+
+If running by hand in Candle or with scripts:
+
+1. Disconnect or close Candle before any PowerShell streamer opens the COM port.
+2. Confirm the CNC is on the CH340 port shown by Windows, commonly `COM7` after reconnect.
+3. Send `$X`.
+4. Send `$H`.
+5. Poll `?` and confirm the response looks like:
+
+   ```text
+   <Idle|MPos:-399.000,-379.000,-1.000|...>
+   ```
+
+6. Do not stream if the response includes `Pn:`. Examples that must be fixed first:
+
+   ```text
+   Pn:X
+   Pn:Z
+   Pn:XZ
+   ```
+
+7. Stream `samples/katahdin.finish.air-dry.nc`.
+8. After the streamer says "Streaming pass finished", keep polling until GRBL returns to `Idle`; GRBL may still be executing buffered moves.
+
+## Known lessons from the successful run
+
+- Candle can keep the COM port locked. Close it before script control.
+- A stale PowerShell process can also keep COM locked after homing; stop only the stale process that owns the port, not an active streamer.
+- The air-dry Z is capped by `New-KatahdinAirDryNc.ps1` so `G0 Z` does not request motion above the homed Z top.
+- The Katahdin files are scaled to about `356 x 330 mm` so they fit the observed Masuter travel with the current `G54` offset.
+- A sender can finish before the controller is done moving. Final success is GRBL status `Idle`, not just the sender exiting.
+
+## Files
+
+- `Start-KatahdinDryRun.ps1` - saved safe workflow.
+- `samples/katahdin.finish.air-dry.nc` - spindle-off finish dry run.
+- `samples/katahdin.rough.air-dry.nc` - spindle-off rough dry run.
+- `samples/katahdin.finish.nc` - real finish pass.
+- `samples/katahdin.rough.nc` - real rough pass.
