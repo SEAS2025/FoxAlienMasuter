@@ -1,8 +1,12 @@
 param(
-  # Only XY move to approximate machine-table center ($130/$131 midpoint in G53). Z unchanged.
+  # Only XY move to approximate machine-table centre ($130/$131 midpoint in G53). Z unchanged.
   [switch]$OnlyCenterTable,
+  # Skip Step 1 (use AFTER you jogged/zero G54 XY on the board centre manually).
+  [switch]$SkipTableCenter,
   # Regenerate NC from defaults (overwrite samples/smiley-face-soft-pine-G54.mm.nc)
   [switch]$RegenerateNc,
+  # Non-interactive: stream spindle carve immediately (implies you accept risk).
+  [switch]$Cut,
   [string]$Com,
   [string]$NcPath = $(Join-Path $PSScriptRoot 'samples/smiley-face-soft-pine-G54.mm.nc')
 )
@@ -40,20 +44,20 @@ if (-not (Test-Path $NcPath)) {
   & (Join-Path $PSScriptRoot 'New-SmileyFacePineNc.ps1') -OutFile $NcPath
 }
 
-Write-Host @'
+if (-not $SkipTableCenter) {
+  Write-Host @'
 
-Table-centre move aligns the spindle to approximate machine-table middle (G53 from EEPROM limits).
-YOUR PINE BOARD may still need a jog until the tool sits above the CENTRE DOT you want for the emoji.
-
-  Then in Candle: set G54 XY ZERO at that spindle centre.
-
-  Probe or touch TOP of pine and SET G54 Z ZERO on top surface (+Z upward away from spoilboard convention).
+About to XY jog to MACHINE table midpoint (not your board centre unless coincident).
+SKIP with -SkipTableCenter if you already set G54 on the pine.
 
 '@
+  Write-Host "--- Step 1: Move XY to EEPROM table midpoint (disconnect Candle first)... ---`n"
 
-Write-Host "--- Step 1: Move XY to EEPROM table midpoint (disconnect Candle first)... ---`n"
-
-& (Join-Path $PSScriptRoot 'Move-To-Table-Center.ps1')
+  & (Join-Path $PSScriptRoot 'Move-To-Table-Center.ps1')
+}
+else {
+  Write-Host "--- Skipped Move-To-Table-Center (--SkipTableCenter). Using current position + G54. ---`n"
+}
 
 if ($OnlyCenterTable) {
   Write-Host "`nOnlyCenterTable: DONE. Clamp pine, jog to board centre, zero XY and Z top, reload Candle and/or run carve."
@@ -70,11 +74,16 @@ READY TO CARVE WARNING
 
 "@
 
-$r = Read-Host "Type CUT (exact uppercase) to stream carve from PowerShell ; anything else quits safely"
+if (-not $Cut) {
+  $r = Read-Host "Type CUT (exact uppercase) to stream carve from PowerShell ; anything else quits safely"
 
-if ($r -ne 'CUT') {
-  Write-Host "`nSkipped streaming. Open $($NcPath) in Candle Preview when ready.`n"
-  exit 0
+  if ($r -ne 'CUT') {
+    Write-Host "`nSkipped streaming. Open $($NcPath) in Candle Preview when ready.`n"
+    exit 0
+  }
+}
+else {
+  Write-Host "`n--Cut: skipping Read-Host (--Cut). STREAMING spindle job.`n"
 }
 
 Write-Host "`nStarting stream (close Candle disconnect serial first)..."
