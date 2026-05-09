@@ -2,6 +2,26 @@
 
 Use this workflow before streaming the Mt. Katahdin toolpaths so the machine does not get stuck on hard stops.
 
+## Close Candle, stop activity, return home (always this order)
+
+When you need to **stop the job**, **free COM**, and put the machine back at **limit home**, run one command from the repo root:
+
+```powershell
+.\Close-Candle-Stop-And-Home.ps1 -Com COM7
+```
+
+Or set `MASUTER_COM` and omit `-Com`. The script:
+
+1. **Closes Candle** so nothing holds the CH340 serial port (same as `Disconnect-Candle.ps1`).
+2. **Stops activity**: feed hold, GRBL soft reset, `$X`, `M5` (spindle off).
+3. **Homes** with `$H` and waits for `Idle` without active `Pn:` limit pins.
+
+If the port is still busy, **stop any PowerShell or other sender** that is streaming G-code to the same COM port (Candle alone is not always the only lock). The script **retries opening COM** several times after closing Candle.
+
+`Stop-Masuter-And-Home.ps1` is a thin alias for the same workflow.
+
+Dry-run and oak automation scripts still **close Candle at the start** of a run so a fresh PowerShell streamer can open COM; use **Close-Candle-Stop-And-Home.ps1** when you are **done** or need to **recover** without hunting which process owns the port.
+
 ## One-command dry run
 
 From this repository:
