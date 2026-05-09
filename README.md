@@ -15,6 +15,7 @@ Operational notes, COM quirks, limit-switch behavior: see **`masuter-setup.txt`*
 | Script | Purpose |
 |--------|---------|
 | `Close-Candle-Stop-And-Home.ps1` | **Shut down workflow:** close Candle, optional `-StopStreamingPowerShell`, stop motion (hold/reset/`$X`/M5), home (`$H`). |
+| `Open-LiveOakRough-In-Candle.ps1` | Regenerate **`samples/katahdin.oak.rough.nc`** and launch Candle with that file (live cut feeds; finish is `katahdin.oak.finish.nc`). |
 | `Disconnect-Candle.ps1` | Stop Candle so another process can open the serial port |
 | `Run-Candle-Masuter.bat` | Launch Candle pointing at `./candle-11.2/Candle/` |
 | `install-candle.ps1` | Download and extract Candle 11.2 portable |
@@ -51,7 +52,9 @@ For a **3D orthographic** render (Matplotlib): `python New-TerrainOrtho3D.py` �
 
 **Shallow trail groove for paint** (run after terrain): `python New-KatahdinTrailEngrave.py` → **`samples/katahdin-trail-light.nc`** (default **-0.35 mm** deep; use a small vee or fine ball).
 
-**White oak carve feeds** (same geometry, slower XY / plunge, `M3 S10800`): run **`New-KatahdinOakFeeds.ps1`** → **`samples/katahdin.oak.rough.nc`** + **`samples/katahdin.oak.finish.nc`**. Optional full sequential stream (spindle on — **real cut**): **`Run-KatahdinOakSequential.ps1 -Com COM7`** (requires typing **`CUT-WHITE-OAK`**).
+**White oak carve feeds** (same geometry, slower XY / plunge, `M3 S10800`): run **`New-KatahdinOakFeeds.ps1`** → **`samples/katahdin.oak.rough.nc`** + **`samples/katahdin.oak.finish.nc`**. To **open the live rough program in Candle** (regenerate + launch): **`Open-LiveOakRough-In-Candle.ps1`**. Optional full sequential stream from PowerShell (spindle on — **real cut**): **`Run-KatahdinOakSequential.ps1 -Com COM7`** (requires typing **`CUT-WHITE-OAK`**).
+
+**Stop / home when COM is stuck on a streamer:** **`.\Close-Candle-Stop-And-Home.ps1 -Com COM7 -StopStreamingPowerShell`** (see **`AGENTS.md`**).
 
 ## Safety
 

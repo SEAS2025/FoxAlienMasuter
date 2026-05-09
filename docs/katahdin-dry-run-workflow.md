@@ -73,10 +73,21 @@ If running by hand in Candle or with scripts:
 ## Known lessons from the successful run
 
 - Candle can keep the COM port locked. Close it before script control.
+- A **PowerShell G-code streamer** (`DryRun-WebCircle`, Katahdin runners) often keeps COM locked **even after Candle is closed** — use **`Close-Candle-Stop-And-Home.ps1 -StopStreamingPowerShell`** (verified fix).
 - A stale PowerShell process can also keep COM locked after homing; stop only the stale process that owns the port, not an active streamer.
 - The air-dry Z is capped by `New-KatahdinAirDryNc.ps1` so `G0 Z` does not request motion above the homed Z top.
 - The Katahdin files are scaled to about `356 x 330 mm` so they fit the observed Masuter travel with the current `G54` offset.
 - A sender can finish before the controller is done moving. Final success is GRBL status `Idle`, not just the sender exiting.
+
+## Live oak rough in Candle
+
+From repo root (regenerates oak `.nc` files, then starts Candle on the **rough** program):
+
+```powershell
+.\Open-LiveOakRough-In-Candle.ps1
+```
+
+Finish program (open manually in Candle after rough): `samples/katahdin.oak.finish.nc`.
 
 ## Files
 
@@ -85,3 +96,4 @@ If running by hand in Candle or with scripts:
 - `samples/katahdin.rough.air-dry.nc` - spindle-off rough dry run.
 - `samples/katahdin.finish.nc` - real finish pass.
 - `samples/katahdin.rough.nc` - real rough pass.
+- `samples/katahdin.oak.rough.nc` / `katahdin.oak.finish.nc` - white oak feeds (spindle on); open rough via `Open-LiveOakRough-In-Candle.ps1`.
