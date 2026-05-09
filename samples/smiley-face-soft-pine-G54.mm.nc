@@ -3,7 +3,7 @@
 ; Step-down passes (~StepDownMm) then retract SafeZ clears chips
 ; Stream order intended: **M3 + dwell BEFORE any XYZ move**
 
-M3 S6000
+M3 S10000
 G4 P18
 G21
 G17

@@ -15,7 +15,7 @@ param(
   [int]$ApproachXYFeed = 220,
   [double]$SafeZMm = 18.0,
   [double]$SkinZMm = 1.0,
-  [int]$SpinRpm = 6000,
+  [int]$SpinRpm = 10000,
   # Dwell after M3 before first G0/G1 (allow VFD/Router spin-up).
   [int]$SpinupDwellSeconds = 18
 )
