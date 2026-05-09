@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Simple outline: 80 mm wide × 60 mm tall (document size matches `<rect>`).
+  Origin (0,0) is bottom-left corner in SVG coords (same as G-code trace).
+  Stroke is hairline  for CAM/import only; engraving path is the rectangle sides.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="80mm" height="60mm" viewBox="0 0 80 60">
+  <title>Outline 80×60 mm rectangle</title>
+  <rect x="0" y="0" width="80" height="60" fill="none" stroke="#0066cc" stroke-width="0.25"/>
+</svg>

@@ -1,0 +1,40 @@
+Fox Alien Masuter + Candle (GRBL)
+=================================
+
+Router: GRBL controller, USB serial (often CH341/CH340 — shows as USB-SERIAL CH340 in Device Manager).
+
+1) USB driver (once)
+   If Windows does not assign a COM port, install the vendor driver from WCH:
+   https://www.wch-ic.com/downloads/CH341SER_EXE.html
+   Replug USB and confirm a COM port appears under Ports (COM & LPT).
+
+2) Start Candle
+   Double-click Run-Candle-Masuter.bat (or run candle-11.2\Candle\candle.exe).
+
+3) Connect in Candle
+   Service > Settings (or connection panel):
+   - Port: COM from Device Manager (e.g. COM7). Your CH340 assignment can change after replug/USB hub.
+
+   - Baud rate: 115200 (standard for GRBL 1.1)
+   Apply and connect. Status should show Grbl and position updates.
+
+4) Machine / workspace (first run)
+   Set soft limits and travel to match your Masuter model in the firmware/Candle as needed.
+   Homing: only if you have limit switches wired — use controls carefully.
+
+5) Sending jobs
+   File > Open to load NC/G-code, then use the send/run controls after checking origin and Z clearance.
+
+Reinstall Candle: run install-candle.ps1 (downloads v11.2 portable from GitHub).
+
+Official Candle project: https://github.com/Denvi/Candle
+
+6) Nothing moves — COM stuck / Idle confusion
+   - Idle (or <Idle …> from `?`) is GOOD: the controller is ready. You do NOT need to clear Idle.
+   - If Candle is connected first, Disconnect-Candle.ps1 (or disconnect in Candle UI) frees CH340 COM.
+   - Orphan PowerShell tests can also hang COM until closed; unplug/replug USB as a last resort.
+   - Scripts: Disconnect-Candle.ps1 then DryRun-WebCircle.ps1 (prints line count). Spindle stays off unless you edit G-code.
+
+7) PowerShell one-liners: avoid naming helpers `R` (and similar)
+   PowerShell binds `R` to the `Invoke-History` alias; calls like `(R $port 5000)` can error with "positional parameter … Invoke-History". Use spelled-out names (`ReadFor`, `Send-Line`, etc.).
+

@@ -1,0 +1,9 @@
+Downloaded SVGs used for tooling tests in this folder:
+
+1) circle.svg
+   Source: https://github.com/feathericons/feather (tag v4.29.0, file icons/circle.svg)
+   License: MIT — https://github.com/feathericons/feather/blob/v4.29.0/LICENSE
+
+2) star.svg (optional reference)
+   Source: https://github.com/twbs/icons (file icons/star.svg)
+   License: MIT — Bootstrap Icons repo root LICENSE.md

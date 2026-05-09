@@ -1,0 +1,7 @@
+# Candle portable (run install-candle.ps1 locally)
+candle-11.2/
+candle-*-portable.zip
+*.zip
+
+# Cursor / IDE
+.cursor/
