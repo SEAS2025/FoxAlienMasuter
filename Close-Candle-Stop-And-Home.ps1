@@ -56,17 +56,44 @@ if ($StopStreamingPowerShell) {
 
 function Drain([System.IO.Ports.SerialPort]$p, [int]$ms) {
   $a = ''
+  if (-not $p.IsOpen) { return $a }
   $dead = (Get-Date).AddMilliseconds($ms)
   while ((Get-Date) -lt $dead) {
     if ($p.BytesToRead) { $a += $p.ReadExisting() }
     Start-Sleep -Milliseconds 40
   }
-  while ($p.BytesToRead) { $a += $p.ReadExisting(); Start-Sleep -Milliseconds 25 }
+  while ($p.IsOpen -and $p.BytesToRead) { $a += $p.ReadExisting(); Start-Sleep -Milliseconds 25 }
   $a
 }
 
+# GRBL soft-reset can make CH340 drop/re-enumerate; reopen before the next command.
+function Ensure-SerialReady([System.IO.Ports.SerialPort]$p, [string]$portName) {
+  if ($p.IsOpen) { return }
+  Write-Host "WARN: $portName closed unexpectedly (common after Ctrl-X). Reopening..." -ForegroundColor Yellow
+  Start-Sleep -Seconds 2
+  for ($r = 1; $r -le 6; $r++) {
+    try {
+      $p.Open()
+      Start-Sleep -Milliseconds 2200
+      return
+    }
+    catch {
+      Write-Host "  Reopen attempt $r/6: $($_.Exception.Message)"
+      Start-Sleep -Seconds 2
+    }
+  }
+  throw "Could not reopen $portName. Replug USB, wait for device, then rerun Close-Candle-Stop-And-Home.ps1."
+}
+
 function Cmd([System.IO.Ports.SerialPort]$p, [string]$s, [int]$waitMs = 8000) {
-  $p.DiscardInBuffer()
+  Ensure-SerialReady $p $Com
+  try {
+    $p.DiscardInBuffer()
+  }
+  catch {
+    Ensure-SerialReady $p $Com
+    $p.DiscardInBuffer()
+  }
   $b = [System.Text.Encoding]::ASCII.GetBytes($s + [char]13)
   $p.Write($b, 0, $b.Length)
   Start-Sleep -Milliseconds 280
