@@ -3,13 +3,16 @@ param(
   [string]$FinishIn = 'samples/katahdin.finish.nc',
   [string]$RoughOut = 'samples/katahdin.oak.rough.nc',
   [string]$FinishOut = 'samples/katahdin.oak.finish.nc',
-  # White oak / stiff Masuter: slower than default 900 mm/min roughing
-  [int]$RoughFeedXY = 620,
-  # Finish passes are lighter
-  [int]$FinishFeedXY = 720,
+  # White oak / stiff Masuter (XY translation; ~1/8 of original 620 / 720 mm/min)
+  [int]$RoughFeedXY = 78,
+  [int]$FinishFeedXY = 90,
   [int]$FeedPlungeRough = 120,
   [int]$FeedPlungeFinish = 135,
-  [int]$SpinRpm = 10800
+  # Trim-router class often tops ~24k; verify your VFD/PWM maps M3 S correctly.
+  [int]$SpinRpm = 24000,
+  # Rapids `G0 Z10` in terrain NC → this Z (mm, work). Lower if Z max limit trips on retract.
+  [ValidateRange(0.1, 50)]
+  [double]$RetractZMm = 5
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,7 +24,8 @@ function Replace-FeedsAndRpm {
     [string]$PathOut,
     [int]$FeedXY,
     [int]$Plunge,
-    [int]$Rpm
+    [int]$Rpm,
+    [double]$RetractZMm = 5
   )
   $pIn = Join-Path $root $PathIn
   $pOut = Join-Path $root $PathOut
@@ -40,11 +44,15 @@ function Replace-FeedsAndRpm {
   if ($text -match ' F200\s*$') { $text = $text -replace ' F200\s*$', (' F{0}' -f $Plunge) }
 
   $text = [regex]::Replace($text, 'M3 S\d+', ('M3 S{0}' -f $Rpm))
+  if ($RetractZMm -ne 10) {
+    $zTxt = $RetractZMm.ToString('0.###', [cultureinfo]::InvariantCulture)
+    $text = [regex]::Replace($text, '(?im)^G0 Z10\s*$', ('G0 Z{0}' -f $zTxt))
+  }
   [System.IO.File]::WriteAllText($pOut, $text, [System.Text.UTF8Encoding]::new($false))
-  Write-Host "Wrote $pOut  (XY F$FeedXY  plunge F$Plunge  M3 S$Rpm)"
+  Write-Host "Wrote $pOut  (XY F$FeedXY  plunge F$Plunge  M3 S$Rpm  retract G0 Z$($RetractZMm.ToString('0.###',[cultureinfo]::InvariantCulture)))"
 }
 
-Replace-FeedsAndRpm $RoughIn $RoughOut $RoughFeedXY $FeedPlungeRough $SpinRpm
-Replace-FeedsAndRpm $FinishIn $FinishOut $FinishFeedXY $FeedPlungeFinish $SpinRpm
+Replace-FeedsAndRpm $RoughIn $RoughOut $RoughFeedXY $FeedPlungeRough $SpinRpm $RetractZMm
+Replace-FeedsAndRpm $FinishIn $FinishOut $FinishFeedXY $FeedPlungeFinish $SpinRpm $RetractZMm
 
 Write-Host 'Done. Tune -RoughFeedXY / -FinishFeedXY if you hear chatter or burning.'

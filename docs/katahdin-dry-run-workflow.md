@@ -76,7 +76,7 @@ If running by hand in Candle or with scripts:
 - A **PowerShell G-code streamer** (`DryRun-WebCircle`, Katahdin runners) often keeps COM locked **even after Candle is closed** — use **`Close-Candle-Stop-And-Home.ps1 -StopStreamingPowerShell`** (verified fix).
 - A stale PowerShell process can also keep COM locked after homing; stop only the stale process that owns the port, not an active streamer.
 - The air-dry Z is capped by `New-KatahdinAirDryNc.ps1` so `G0 Z` does not request motion above the homed Z top.
-- The Katahdin files are scaled to about `356 x 330 mm` so they fit the observed Masuter travel with the current `G54` offset.
+- The Katahdin footprint is about **`186 x 172 mm`** (`--board-mm 186`) so **max work X ~185 mm** fits the operator far-right limit in **`AGENTS.md`**; tune **`--board-mm`** if stock or clamps change.
 - A sender can finish before the controller is done moving. Final success is GRBL status `Idle`, not just the sender exiting.
 
 ## Live oak rough in Candle

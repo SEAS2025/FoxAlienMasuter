@@ -9,9 +9,10 @@ from __future__ import annotations
 LAT_MIN, LAT_MAX = 45.86, 45.95
 LON_MIN, LON_MAX = -68.99, -68.85
 
-# Default resampled grid for current table-fit exaggerated Katahdin (356 x 330 mm @ 1 mm/px)
-DEFAULT_COLS = 356
-DEFAULT_ROWS = 330
+# Default resampled grid — keep in sync with latest New-TerrainNc.py run for samples/katahdin*
+# (operator far-right work limit ~187 mm: --board-mm 186 -> ~186 x 172 mm @ 1 mm/px, max X≈185)
+DEFAULT_COLS = 186
+DEFAULT_ROWS = 172
 DEFAULT_PX_MM = 1.0
 
 # Approximate AT through Katahdin massif if OSM unavailable (lon, lat)

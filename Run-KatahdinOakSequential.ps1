@@ -1,6 +1,8 @@
 param(
   [string]$Com,
-  [switch]$SkipHome
+  [switch]$SkipHome,
+  # Skip CUT-WHITE-OAK typed confirmation (automation / trusted runs only).
+  [switch]$Force
 )
 
 # Sequential Masuter run: rough then finish for katahdin.oak.*.nc
@@ -28,17 +30,21 @@ Write-Host @'
 ==============================================================================
 OAK CARVE / SPINDLE-ON TEST
   Next: streams katahdin.oak.rough.nc then katahdin.oak.finish.nc
-  Feeds: conservative white oak (620 / 720 mm/min XY — see New-KatahdinOakFeeds.ps1)
+  Feeds: conservative white oak (78 / 90 mm/min XY — see New-KatahdinOakFeeds.ps1)
   E-stop must be free. Hearing protection. Vacuum recommended.
 ==============================================================================
 
 '@
 
-$r = Read-Host "Type CUT-WHITE-OAK to start both programs (exact case)"
+if (-not $Force) {
+  $r = Read-Host "Type CUT-WHITE-OAK to start both programs (exact case)"
 
-if ($r -ne 'CUT-WHITE-OAK') {
-  Write-Host 'Aborted.'
-  exit 0
+  if ($r -ne 'CUT-WHITE-OAK') {
+    Write-Host 'Aborted.'
+    exit 0
+  }
+} else {
+  Write-Host 'Force: starting oak rough + finish without CUT-WHITE-OAK prompt.' -ForegroundColor Yellow
 }
 
 Write-Host "`n--- Rough ---`n"

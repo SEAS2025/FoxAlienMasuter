@@ -39,7 +39,7 @@ Start-Sleep -Seconds 2
 
 if ($StopStreamingPowerShell) {
   Write-Host '--- Stopping PowerShell G-code streamers from this workflow (DryRun / Katahdin runners)...' -ForegroundColor Yellow
-  $streamRx = '(?i)DryRun-WebCircle\.ps1|Start-KatahdinDryRun\.ps1|Run-KatahdinOakAirTestSequential\.ps1|Run-KatahdinOakSequential\.ps1'
+  $streamRx = '(?i)DryRun-WebCircle\.ps1|Resume-KatahdinOakRough\.ps1|Resume-OakRough-In-Candle\.ps1|Start-KatahdinDryRun\.ps1|Run-KatahdinOakAirTestSequential\.ps1|Run-KatahdinOakSequential\.ps1|Run-KatahdinRoughLayer1\.ps1|Run-KatahdinCornerHoles\.ps1|Move-To-KatahdinG54Origin\.ps1|Move-To-KatahdinFirstCut\.ps1|Jog-Z-Relative\.ps1|Jog-X-Relative\.ps1'
   foreach ($procName in @('powershell.exe', 'pwsh.exe')) {
     Get-CimInstance Win32_Process -Filter "Name='$procName'" | ForEach-Object {
       $cl = $_.CommandLine

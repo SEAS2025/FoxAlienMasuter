@@ -14,13 +14,17 @@ Pipeline:
 
 CLI:
   python New-TerrainNc.py --name katahdin --lat-min 45.86 --lat-max 45.95 \
-      --lon-min -68.99 --lon-max -68.85 --board-mm 356 \
-      --stock-mm 25 --max-cut-mm 18 --vexag 1.0 \
-      --rough-tool 3.0 --finish-tool 3.0 --finish-stepover 0.4 \
+      --lon-min -68.99 --lon-max -68.85 --board-mm 186 \
+      --stock-mm 25 --max-cut-mm 22 --vexag 1.5 \
+      --rough-tool 3.0 --finish-tool 3.0 --finish-stepover 0.6 \
       --out samples/katahdin
 
-  Use --board-mm ~356 (not 380) on Fox Alien Masuter when G54 WCO X ~ -363
-  so max work X stays within ~363 mm travel to machine X=0.
+  Use --board-mm ~186 when operator far-right work X must stay under ~187 mm (see AGENTS.md).
+  For 12 in nominal stock width without that clamp-side limit, larger --board-mm is OK.
+
+  If early rough tiers only cut air: your G54 Z0 is usually above the real stock top — re-touch Z
+  on the surface, or regenerate with --deepen-cuts-mm set to the measured air gap (subtracts that
+  much from every cutting G1 Z; safe Z unchanged).
 """
 
 from __future__ import annotations
@@ -115,21 +119,48 @@ def fnum(v: float) -> str:
     return f"{v:.4f}".rstrip("0").rstrip(".") or "0"
 
 
-def header_lines(title: str, spin_rpm: int, spinup_s: int, safe_z: float) -> list[str]:
-    return [
+def header_lines(
+    title: str,
+    spin_rpm: int,
+    spinup_s: int,
+    safe_z: float,
+    *,
+    extra_comments: list[str] | None = None,
+) -> list[str]:
+    lines = [
         f"; {title}",
         "; M3 + dwell BEFORE any XYZ move; ends with M5.",
-        f"M3 S{spin_rpm}",
-        f"G4 P{spinup_s}",
-        "G21",
-        "G17",
-        "G90",
-        "G94",
-        "G54",
-        "",
-        f"G0 Z{fnum(safe_z)}",
-        "",
     ]
+    if extra_comments:
+        lines.extend(extra_comments)
+    lines.extend(
+        [
+            f"M3 S{spin_rpm}",
+            f"G4 P{spinup_s}",
+            "G21",
+            "G17",
+            "G90",
+            "G94",
+            "G54",
+            "",
+            f"G0 Z{fnum(safe_z)}",
+            "",
+        ]
+    )
+    return lines
+
+
+def _emit_cut_z(z: float, deepen_mm: float, max_cut_mm: float) -> float:
+    """Positive deepen_mm shifts cuts deeper (more negative Z); clamp to max cut."""
+    if deepen_mm <= 0:
+        return z
+    return max(z - deepen_mm, -max_cut_mm)
+
+
+def _emit_cut_z_array(zs: np.ndarray, deepen_mm: float, max_cut_mm: float) -> np.ndarray:
+    if deepen_mm <= 0:
+        return zs
+    return np.maximum(zs.astype(np.float64) - deepen_mm, -max_cut_mm).astype(np.float32)
 
 
 def _simplify_scanline(xs_mm, zs, z_tol):
@@ -165,6 +196,9 @@ def emit_rough(
     spin_rpm: int,
     spinup_s: int,
     z_tol_mm: float = 0.15,
+    header_extra: list[str] | None = None,
+    deepen_cuts_mm: float = 0.0,
+    max_cut_mm: float = 18.0,
 ):
     rows, cols = depth_grid.shape
     pitch_px = max(1, int(round(tool_dia_mm * 0.9 / px_mm)))
@@ -178,6 +212,7 @@ def emit_rough(
     L = header_lines(
         f"terrain ROUGH flat-endmill {tool_dia_mm}mm step-down {step_down_mm}mm",
         spin_rpm, spinup_s, safe_z_mm,
+        extra_comments=header_extra,
     )
 
     def to_xy(ix: int, iy: int) -> tuple[float, float]:
@@ -187,12 +222,13 @@ def emit_rough(
 
     for tier_idx, z_tier in enumerate(levels):
         tier_depth = np.maximum(depth_grid, z_tier)
-        L.append(f"; --- ROUGH tier {tier_idx + 1}/{len(levels)} Z >= {fnum(z_tier)} ---")
+        z_label = _emit_cut_z(float(z_tier), deepen_cuts_mm, max_cut_mm)
+        L.append(f"; --- ROUGH tier {tier_idx + 1}/{len(levels)} Z >= {fnum(z_label)} ---")
         L.append(f"G0 Z{fnum(safe_z_mm)}")
         for j_idx, iy in enumerate(range(0, rows, pitch_px)):
             row_z = tier_depth[iy, :]
             xs_idx = np.arange(0, cols, pitch_px)
-            zs = row_z[xs_idx].astype(np.float32)
+            zs = _emit_cut_z_array(row_z[xs_idx].astype(np.float32), deepen_cuts_mm, max_cut_mm)
             xs_mm = xs_idx * px_mm
             if j_idx % 2:
                 xs_idx = xs_idx[::-1]; xs_mm = xs_mm[::-1]; zs = zs[::-1]
@@ -227,6 +263,9 @@ def emit_finish(
     spin_rpm: int,
     spinup_s: int,
     z_tol_mm: float = 0.05,
+    header_extra: list[str] | None = None,
+    deepen_cuts_mm: float = 0.0,
+    max_cut_mm: float = 18.0,
 ):
     """Finishing raster with a ball-nose. Sphere-centre Z is the min depth in
     a disc of tool radius around (x,y), so the ball never crashes a peak.
@@ -239,6 +278,7 @@ def emit_finish(
     L = header_lines(
         f"terrain FINISH ball-nose {tool_dia_mm}mm stepover {stepover_mm}mm",
         spin_rpm, spinup_s, safe_z_mm,
+        extra_comments=header_extra,
     )
 
     def to_xy(ix: int, iy: int) -> tuple[float, float]:
@@ -260,7 +300,7 @@ def emit_finish(
             row_z = row_min
 
         xs_idx = np.arange(0, cols, x_sample_px)
-        zs = row_z[xs_idx].astype(np.float32)
+        zs = _emit_cut_z_array(row_z[xs_idx].astype(np.float32), deepen_cuts_mm, max_cut_mm)
         xs_mm = xs_idx * px_mm
         if j_idx % 2:
             xs_idx = xs_idx[::-1]; xs_mm = xs_mm[::-1]; zs = zs[::-1]
@@ -293,6 +333,15 @@ def main():
     ap.add_argument("--stock-mm", type=float, default=25.0)
     ap.add_argument("--max-cut-mm", type=float, default=18.0,
                     help="Max usable depth below stock top (Z0).")
+    ap.add_argument(
+        "--deepen-cuts-mm",
+        type=float,
+        default=0.0,
+        help=(
+            "Subtract this from every cutting G1 Z (mm); safe rapids (--safe-z) unchanged. "
+            "Use when G54 Z0 is above the real stock (e.g. bit floats ~N mm above wood at the first cut)."
+        ),
+    )
     ap.add_argument("--vexag", type=float, default=1.0,
                     help="Multiply on top of the auto-fit vertical scale.")
     ap.add_argument("--rough-tool", type=float, default=3.0)
@@ -339,10 +388,22 @@ def main():
 
     depth = -((h_max - height) * v_scale)
     depth = np.clip(depth, -args.max_cut_mm, 0.0)
+    if args.deepen_cuts_mm:
+        depth_png = np.clip(depth - float(args.deepen_cuts_mm), -args.max_cut_mm, 0.0)
+        print(f"Deepen cuts: {args.deepen_cuts_mm:g} mm applied at G1 Z emit (clamp --max-cut-mm)")
+    else:
+        depth_png = depth
     print(f"Vertical: range {elev_range:.1f} m -> auto {auto_v_scale * 1000:.2f} mm/km, x{args.vexag} -> {v_scale * 1000:.2f} mm/km")
-    print(f"Depth grid: {depth.min():.2f} .. {depth.max():.2f} mm")
+    print(f"Depth grid (nominal): {depth.min():.2f} .. {depth.max():.2f} mm")
 
-    save_heightmap_png(depth, out_base.with_suffix(".heightmap.png"))
+    save_heightmap_png(depth_png, out_base.with_suffix(".heightmap.png"))
+
+    header_extra = None
+    if args.deepen_cuts_mm:
+        header_extra = [
+            f"; deepen-cuts-mm {fnum(float(args.deepen_cuts_mm))} "
+            "(subtract from each cutting Z; safe Z unchanged)"
+        ]
 
     rough_lines, tiers = emit_rough(
         depth, px_mm, out_base.with_suffix(".rough.nc"),
@@ -350,6 +411,9 @@ def main():
         safe_z_mm=args.safe_z, feed_xy=args.feed_xy, feed_plunge=args.feed_plunge,
         feed_approach=args.feed_approach, spin_rpm=args.spin_rpm, spinup_s=args.spinup_s,
         z_tol_mm=args.rough_z_tol,
+        header_extra=header_extra,
+        deepen_cuts_mm=float(args.deepen_cuts_mm),
+        max_cut_mm=float(args.max_cut_mm),
     )
     finish_lines = emit_finish(
         depth, px_mm, out_base.with_suffix(".finish.nc"),
@@ -357,6 +421,9 @@ def main():
         safe_z_mm=args.safe_z, feed_xy=args.feed_xy, feed_plunge=args.feed_plunge,
         spin_rpm=args.spin_rpm, spinup_s=args.spinup_s,
         z_tol_mm=args.finish_z_tol,
+        header_extra=header_extra,
+        deepen_cuts_mm=float(args.deepen_cuts_mm),
+        max_cut_mm=float(args.max_cut_mm),
     )
 
     print(f"Wrote {out_base.with_suffix('.heightmap.png')}")
